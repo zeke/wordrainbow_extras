@@ -14,6 +14,7 @@ lists = %w(
   colors--2
   colors--5
   colors--7
+  colors--9
   colors-fantastic
   colour-me-happy
   crayola-old-style
@@ -21,32 +22,18 @@ lists = %w(
   not-your-normal-colors
 )
 
+# Fetch blacklist array
+blacklist = Wordnik::Request.new(:get, "wordList.json/blacklist/words").response.body.map{ |w| w['word'].downcase }
+
 # Fetch each list and add its words to the colors array
 lists.each do |list|
   request = Wordnik::Request.new(:get, "wordList.json/#{list}/words")
   request.response.body.each do |listed_word|
-    colors << listed_word['word'].downcase
+    word = listed_word['word'].downcase
+    colors << word unless blacklist.include?(word)
   end
 end
 
-
-Wordnik.configure do |c|
-  c.api_key = '1d3baf57f57254b5c430200e729037e9dea9d87493f3a16b4'
-  c.username = 'wordrainbow'
-  c.password = 'gomer'
-end
-Wordnik.authenticate
-
-
-my_color_list = "colors--9"
-# Remove duplicates and alphabetize
-
-colors.uniq.sort.each do |color|
-  
-  request = Wordnik::Request.new(
-    :post,
-    "wordList.json/#{my_color_list}/words",
-    :body => {:word => color}
-  )
-  
-end
+# Create an empty file for writing. If a file with the same name already exists its 
+# content is erased and the file is treated as a new empty file.
+File.open("colors.txt", 'w') {|f| f.write(colors.uniq.sort.join("\n")) }
